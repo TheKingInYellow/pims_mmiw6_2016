@@ -176,3 +176,91 @@ def main(lamb):
     plt.xlim(time.min(), time.max())
     ax.grid()
     plt.show()
+
+
+def Plotting(lamb,i):
+    # define all time related constants
+    TIME_G_1 = 20 # seconds
+    TIME_R_1 = 20 # seconds
+#    TIME_G_2 = TIME_R_1 # seconds
+#    TIME_R_2 = TIME_G_1 # seconds
+    T = TIME_G_1 + TIME_R_1 # seconds
+    dt = .01    #time step in cumsum method
+
+    # define arrival constraints
+    LAMBDA_1 = lamb[0]
+    LAMBDA_2 = lamb[1]
+    # define departure rate
+    RHO_1 = 2.0
+    RHO_2 = 3.0
+
+    # define initial conditions
+    q0, t0 = [7, 20], 0
+
+    # arrivals dependent on poisson process
+ #   ARRIVAL_1 = np.random.poisson(lam=LAMBDA_1)
+ #   ARRIVAL_2 = np.random.poisson(lam=LAMBDA_2)
+
+    # define indicator functions
+    def I1(t): return 1.0 if np.mod(t,T) <= TIME_G_1 else 0.0
+    def I2(t): return 1.0 if np.mod(t,T) >= TIME_G_1 else 0.0
+
+    # define our right hand side
+    def f(lam,rho,ind): return lam - rho*ind
+
+    def RHS(t): return [f(LAMBDA_1,RHO_1,I1(t)), f(LAMBDA_2,RHO_2,I2(t))]
+
+    def Solution(time,initial):
+        queue = []
+        for t in time:
+            queue.append(RHS(t))
+        fcn = np.reshape(queue,[len(time),2])
+        sol = np.asarray(np.cumsum(fcn,axis=0)*dt + initial)
+        sol[sol<0] = 0
+        return sol
+    # OBSOLETE : solution using numpy's cumsum
+    # First part of the solution: time interval (t0,TIME_G_1)
+    time1 = np.asarray(np.arange(t0,TIME_G_1,dt))
+    sol1 = Solution(time1,q0)
+    # Second part of the solution: time interval (TIME_G_1,T)
+    time2 = np.asarray(np.arange(TIME_G_1,T,dt))
+    sol2 = Solution(time2,sol1[-1,])
+    # Concatenate results
+    time = np.concatenate((time1,time2))
+    queues = np.squeeze(np.concatenate((sol1,sol2)))
+
+#    # set up scipy ode integrator
+#    q=spi.ode(RHS).set_integrator("vode", method="bdf")
+#    q.set_initial_value(q0, t0)
+#
+#    # iterate to get results
+#    time = []
+#    queues = []
+#    while q.successful() and q.t < T:
+#        step = q.t+dt
+#        resp = q.integrate(q.t+dt)
+#        resp[resp<0]=0
+##        resp = max([resp,0])
+#        time.append(step)
+#        queues.append(resp)
+#    #    print(step, resp)
+
+    # generate pretty plots
+    fig = plt.plot(time,queues[:,0], 'b-', )
+    plt.plot(time, queues[:,1], 'r--')
+    ax = plt.gca()
+    ax.set_title("Queue Size vs. Time")
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("Queue Size (# Cars)")
+    ax.grid()
+    ax.set_ylim([0,np.amax(queues)+10])
+    #plt.show()
+    plt.savefig(str(i)+".png")
+    plt.clf()
+
+
+lamb= [[1.4321,2.654],[3.231,2.12],[1.76,4.4325],[3.9876,4.5432],[2.213,3.5356]]
+L = len(lamb)
+for i in range(len(lamb)):
+    Plotting(lamb[i],i)
+
