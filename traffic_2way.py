@@ -88,7 +88,7 @@ def main(lamb,i):
 
     # generate pretty plots
     fig = plt.plot(time,queues[:,0], 'k-', label="Street 1", alpha=0.8)
-    plt.plot(time, queues[:,1], 'k-', label="Street 2", alpha=0.8)
+    plt.plot(time, queues[:,1], 'k--', label="Street 2", alpha=0.8)
     ax = plt.gca()
     #fig = plt.plot(time, np.zeros(len(time)), 'w')
     #ax = plt.gca()
@@ -110,20 +110,21 @@ def main(lamb,i):
     segments1 = np.concatenate([points1[:-1], points1[1:]], axis=1)
     cmap1 = ListedColormap(['g','r'])
     lc1 = LineCollection(segments1, cmap=cmap1, \
-            norm=BoundaryNorm([TIME_G_1], cmap1.N))
+            norm=BoundaryNorm([TIME_G_1], cmap1.N), \
+            linewidth = 3, linestyle = 'dashed')
     lc1.set_array(np.mod(time,T))
-    lc1.set_linewidth(3)
-    lc1.set_linestyle('-')
+    #lc1.set_linestyle('dashed')
+    #lc1.set_linewidth(3)
     ax.add_collection(lc1)
 
     points2 = np.array([time, queues[:,1]]).T.reshape(-1,1,2)
     segments2 = np.concatenate([points2[:-1], points2[1:]], axis=1)
     cmap2 = ListedColormap(['r','g'])
     lc2 = LineCollection(segments2, cmap=cmap2, \
-            norm=BoundaryNorm([TIME_G_1], cmap2.N))
+            norm=BoundaryNorm([TIME_G_1], cmap2.N), \
+            linewidth = 3, linestyle = 'solid')
     lc2.set_array(np.mod(time,T))
     lc2.set_linewidth(3)
-    lc2.set_linestyle('-')
     ax.add_collection(lc2)
 
     plt.xlim(time.min(), time.max())
