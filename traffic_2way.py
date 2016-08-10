@@ -7,12 +7,12 @@ import numpy as np
 import scipy.integrate as spi
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
-from matplotlib.colors import ListedColormap, BoundaryNorm, Normalize
+from matplotlib.colors import ListedColormap, BoundaryNorm
 
 def main(lamb,i):
     # define all time related constants
     TIME_G_1 = 20 # seconds
-    TIME_R_1 = 20 # seconds
+    TIME_R_1 = 40 # seconds
 #    TIME_G_2 = TIME_R_1 # seconds
 #    TIME_R_2 = TIME_G_1 # seconds
     T = TIME_G_1 + TIME_R_1 # seconds
@@ -87,14 +87,14 @@ def main(lamb,i):
 #    #    print(step, resp)
 
     # generate pretty plots
-    fig = plt.plot(time,queues[:,0], 'k-', label="Street 1", alpha=0.7)
-    plt.plot(time, queues[:,1], 'k-', label="Street 2", alpha=0.7)
+    fig = plt.plot(time,queues[:,0], 'k-', label="Street 1", alpha=0.8)
+    plt.plot(time, queues[:,1], 'k-', label="Street 2", alpha=0.8)
     ax = plt.gca()
     #fig = plt.plot(time, np.zeros(len(time)), 'w')
     #ax = plt.gca()
-    ax.set_title("Queue Size vs. Time")
-    ax.set_xlabel("Time (s)")
-    ax.set_ylabel("Queue Size (# Cars)")
+    # ax.set_title("Queue Size vs. Time")
+    # ax.set_xlabel("Time (s)")
+    # ax.set_ylabel("Queue Size (# Cars)")
     # ax.legend(loc='best')
     # plt.axvspan(0, TIME_G_1, facecolor='r', alpha=0.2)
     # plt.axvspan(TIME_G_1, T, facecolor='g', alpha=0.2)
@@ -108,18 +108,22 @@ def main(lamb,i):
 
     points1 = np.array([time, queues[:,0]]).T.reshape(-1,1,2)
     segments1 = np.concatenate([points1[:-1], points1[1:]], axis=1)
-    lc1 = LineCollection(segments1, cmap=ListedColormap(['g','r']))
-    lc1.set_array(time)
-    lc1.set_linewidth(2)
+    cmap1 = ListedColormap(['g','r'])
+    lc1 = LineCollection(segments1, cmap=cmap1, \
+            norm=BoundaryNorm([TIME_G_1], cmap1.N))
+    lc1.set_array(np.mod(time,T))
+    lc1.set_linewidth(3)
     lc1.set_linestyle('-')
     ax.add_collection(lc1)
 
     points2 = np.array([time, queues[:,1]]).T.reshape(-1,1,2)
     segments2 = np.concatenate([points2[:-1], points2[1:]], axis=1)
-    lc2 = LineCollection(segments2, cmap=ListedColormap(['r','g']))
-    lc2.set_array(time)
-    lc2.set_linewidth(2)
-    lc2.set_linestyle('--')
+    cmap2 = ListedColormap(['r','g'])
+    lc2 = LineCollection(segments2, cmap=cmap2, \
+            norm=BoundaryNorm([TIME_G_1], cmap2.N))
+    lc2.set_array(np.mod(time,T))
+    lc2.set_linewidth(3)
+    lc2.set_linestyle('-')
     ax.add_collection(lc2)
 
     plt.xlim(time.min(), time.max())
@@ -128,7 +132,7 @@ def main(lamb,i):
     plt.close()
 
 
-lamb= [[1.4321,2.654],[3.231,2.12],[1.76,4.4325],[3.9876,4.5432],[2.213,3.5356]]
+lamb= [[1.4321,2.654],[3.231,2.12],[1.76,4.4325],[3.9876,4.5432],[2.213,3.5356],[0.323,0.3322]]
 L = len(lamb)
 for i in range(len(lamb)):
     main(lamb[i],i)
