@@ -6,6 +6,8 @@ import matplotlib
 import numpy as np
 import scipy.integrate as spi
 import matplotlib.pyplot as plt
+from matplotlib.collections import LineCollection
+from matplotlib.colors import ListedColormap, BoundaryNorm, Normalize
 
 # get_ipython().magic('matplotlib inline')
 
@@ -136,12 +138,41 @@ def main(lamb):
     queues = np.squeeze(queues)
 
     # generate pretty plots
-    fig = plt.plot(time,queues[:,0], 'b-', label="Street 1")
-    plt.plot(time, queues[:,1], 'r--', label="Street 2")
+    fig = plt.plot(time,queues[:,0], 'k-', label="Street 1", alpha=0.7)
+    plt.plot(time, queues[:,1], 'k-', label="Street 2", alpha=0.7)
     ax = plt.gca()
+    #fig = plt.plot(time, np.zeros(len(time)), 'w')
+    #ax = plt.gca()
     ax.set_title("Queue Size vs. Time")
     ax.set_xlabel("Time (s)")
     ax.set_ylabel("Queue Size (# Cars)")
+    # ax.legend(loc='best')
+    # plt.axvspan(0, TIME_G_1, facecolor='r', alpha=0.2)
+    # plt.axvspan(TIME_G_1, T, facecolor='g', alpha=0.2)
+    # plt.axvline(x=TIME_G_1, color='g')
+
+    #fig = plt.figure()
+    #ax = fig.add_subplot(111)
+    ax.set_title("Queue Size vs. Time")
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("Queue Size (# Cars)")
+
+    points1 = np.array([time, queues[:,0]]).T.reshape(-1,1,2)
+    segments1 = np.concatenate([points1[:-1], points1[1:]], axis=1)
+    lc1 = LineCollection(segments1, cmap=ListedColormap(['r','g']))
+    lc1.set_array(time)
+    lc1.set_linewidth(2)
+    lc1.set_linestyle('-')
+    ax.add_collection(lc1)
+
+    points2 = np.array([time, queues[:,1]]).T.reshape(-1,1,2)
+    segments2 = np.concatenate([points2[:-1], points2[1:]], axis=1)
+    lc2 = LineCollection(segments2, cmap=ListedColormap(['g','r']))
+    lc2.set_array(time)
+    lc2.set_linewidth(2)
+    lc2.set_linestyle('--')
+    ax.add_collection(lc2)
+
+    plt.xlim(time.min(), time.max())
     ax.grid()
-    ax.legend(loc='best')
     plt.show()
