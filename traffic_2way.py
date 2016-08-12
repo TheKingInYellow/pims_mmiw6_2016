@@ -7,10 +7,12 @@ from __future__ import division, print_function
 import matplotlib
 import numpy as np
 import scipy.integrate as spi
+import scipy.stats as sps
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 from matplotlib.colors import ListedColormap, BoundaryNorm, Normalize
 from scipy.optimize import minimize_scalar
+import seaborn as sns
 
 def tau(q0,rho,lamb,T,TIME_G):
     if TIME_G > -q0/(lamb-rho):
@@ -20,7 +22,7 @@ def tau(q0,rho,lamb,T,TIME_G):
     return (qbar + 1)/(rho*TIME_G)
 
 # get_ipython().magic('matplotlib inline')
-def main(lamb,i):
+def main(q0, t0, i):
     # define all time related constants
     T = 60
 #    TIME_G_1 = 30.9265046289334506 # seconds
@@ -30,19 +32,21 @@ def main(lamb,i):
 #    T = TIME_G_1 + TIME_R_1 # seconds
     dt = .01    #time step in cumsum method
     # define arrival constraints
-    LAMBDA_1 = lamb[0]
-    LAMBDA_2 = lamb[1]
+    #LAMBDA_1 = lamb[0]
+    #LAMBDA_2 = lamb[1]
     # define departure rate
-    RHO_1 = 10.0
-    RHO_2 = 10.0
-    # define initial conditions
-    q0, t0 = [20, 10], 0
+    #RHO_1 = np.random.uniform(low=2.0, high=4.0)
+    #RHO_2 = np.random.uniform(low=2.0, high=4.0)
 
-    def WAWT(t,initial):
-       return (LAMBDA_1*tau(initial[0],RHO_1,LAMBDA_1,T,t) + LAMBDA_2*tau(initial[1],RHO_2,LAMBDA_2,T,T-t))/(LAMBDA_1+LAMBDA_2)
+    # define initial conditions
+    # q0, t0 = [7, 20], 0
+
+    def WAWT(t,lamb,ro1,ro2,initial):
+       return (lamb[0]*tau(initial[0],ro1,lamb[0],T,t) + \
+               lamb[1]*tau(initial[1],ro2,lamb[1],T,T-t))/(lamb[0]+lamb[1])
     # arrivals dependent on poisson process
- #   ARRIVAL_1 = np.random.poisson(lam=LAMBDA_1)
- #   ARRIVAL_2 = np.random.poisson(lam=LAMBDA_2)
+    # ARRIVAL_1 = np.random.poisson(lam=LAMBDA_1)
+    # ARRIVAL_2 = np.random.poisson(lam=LAMBDA_2)
 
     # define indicator functions
     def I1(t): return 1.0 if np.mod(t,T) <= TIME_G_1 else 0.0
@@ -51,17 +55,30 @@ def main(lamb,i):
     # define our right hand side
     def f(lam,rho,ind): return lam - rho*ind
 
-    def RHS(t): return [f(LAMBDA_1,RHO_1,I1(t)), f(LAMBDA_2,RHO_2,I2(t))]
+    def RHS(t,lam1,lam2,ro1,ro2):
+        return [f(lam1,ro1,I1(t)), f(lam2,ro2,I2(t))]
+
+    def giveRho(q):
+        rho = np.random.uniform(low=2.0, high=5.0)
+        buses = np.random.binomial(q, 0.05)
+        rcars = np.random.binomial(q-buses, 0.3)
+        rbus = np.random.binomial(buses, 0.3)
+        return np.max(((rho-rcars*0.1-rbus*0.2-(buses-rbus)*0.1), 1.0))
 
     def Solution(time,initial):
         queue = []
-        for t in time:
-            queue.append(RHS(t))
+        lamb = np.random.uniform(low=0.0, high=7.0, size=2)
+        rho1 = giveRho(initial[0])
+        rho2 = giveRho(initial[1])
+        # iterate through time step
+        for k,t in enumerate(time):
+            # add right turning on red light???
+            queue.append(RHS(t,lamb[0],lamb[1],rho1,rho2))
         fcn = np.reshape(queue,[len(time),2])
         sol = np.asarray(np.cumsum(fcn,axis=0)*dt + initial)
         sol[sol<0] = 0
         return sol
-    # OBSOLETE : solution using numpy's cumsum
+
     # First part of the solution: time interval (t0,TIME_G_1)
     initial = q0
     c = 5.5
@@ -70,6 +87,7 @@ def main(lamb,i):
     TIME_G_1 = minimize_scalar(WAWT, args=(initial), bounds=(0+c, T-c), method='bounded').x
     GreenLightTime.append(TIME_G_1)
     time = np.asarray(np.arange(t0,TIME_G_1,dt))
+    lamb = np.random.uniform(low=0.0, high=4.0, size=2)
     sol = Solution(time,q0)
     # Lets try two cycles:
     numcycles = 3
@@ -87,7 +105,8 @@ def main(lamb,i):
             GreenLightTime.append(T-TIME_G_1)
         else:
             GreenLightTime.append(TIME_G_1)
-        TIME_G_1 =  minimize_scalar(WAWT, args=(initial), bounds=(0+c, T-c), method='bounded').x if np.mod(j,2)==0 else TIME_G_1
+        TIME_G_1 =  minimize_scalar(WAWT, args=(initial), bounds=(0+c, T-c), \
+                method='bounded').x if np.mod(j,2)==0 else TIME_G_1
     queues = np.squeeze(sol)
 #    # set up scipy ode integrator
 #    q=spi.ode(RHS).set_integrator("vode", method="bdf")
@@ -152,10 +171,7 @@ def main(lamb,i):
     plt.savefig(str(i)+".png")
     plt.close()
 
-
-lamb= [[1.4321,2.654],[3.231,2.12],[1.76,4.4325],[3.9876,4.5432],[2.213,3.5356]]
-#
-L = len(lamb)
-for i in range(len(lamb)):
-    main(lamb[i],i)
+q0 = [[7,20], [5,5], [15,12], [1,3], [6,0], [14,3]]
+for i, qq in enumerate(q0):
+    main(qq,0,i)
 
