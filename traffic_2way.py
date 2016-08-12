@@ -49,7 +49,7 @@ def main(q0, t0 ,i):
         buses = np.random.binomial(q, 0.05)
         rcars = np.random.binomial(q-buses, 0.3)
         rbus = np.random.binomial(buses, 0.3)
-        return (rho1 - rcar1*0.1 - rbus1*0.2 - (buses1-rbus1)*0.1).clip(min=1.0)
+        return np.max(((rho-rcars*0.1-rbus*0.2-(buses-rbus)*0.1), 1.0))
 
     def Solution(time,initial):
         queue = []
@@ -58,7 +58,7 @@ def main(q0, t0 ,i):
         rho2 = giveRho(initial[1])
         # iterate through time step
         for k,t in enumerate(time):
-            # add right turning on red light????
+            # add right turning on red light???
             queue.append(RHS(t,lamb[0],lamb[1],rho1,rho2))
         fcn = np.reshape(queue,[len(time),2])
         sol = np.asarray(np.cumsum(fcn,axis=0)*dt + initial)
@@ -67,7 +67,7 @@ def main(q0, t0 ,i):
 
     # First part of the solution: time interval (t0,TIME_G_1)
     time = np.asarray(np.arange(t0,TIME_G_1,dt))
-    Slope = RHS(time[1])
+    lamb = np.random.uniform(low=0.0, high=7.0, size=2)
     sol = Solution(time,q0)
     # Lets try two cycles:
     numcycles = 3
@@ -77,14 +77,12 @@ def main(q0, t0 ,i):
         start = np.mod(index,2)*TIME_G_1 + np.floor(index/2)*T
         end = np.mod(index+1,2)*TIME_G_1 + np.floor((index+1)/2)*T
         time_temp =  np.asarray(np.arange(start,end,dt))
-        Slope.append(RHS(time_temp[1]))
         sol_temp = Solution(time_temp,initial)
         initial = sol_temp[-1,]
         time = np.concatenate((time,time_temp))
         sol = np.concatenate((sol,sol_temp))
 
     queues = np.squeeze(sol)
-    print(Slope)
 #    # set up scipy ode integrator
 #    q=spi.ode(RHS).set_integrator("vode", method="bdf")
 #    q.set_initial_value(q0, t0)
